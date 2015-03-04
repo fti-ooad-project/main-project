@@ -1,0 +1,15 @@
+*~
+*.includes
+*.files
+*.creator
+*.creator.user
+*.config
+
+!source.files
+
+android/bin
+android/obj
+android/gen
+
+desktop/obj
+desktop/app
