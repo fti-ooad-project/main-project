@@ -12,4 +12,5 @@ android/obj
 android/gen
 
 desktop/obj
+desktop/dep
 desktop/app

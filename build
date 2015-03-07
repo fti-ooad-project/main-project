@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./mkupdate
+./script/mkupdate
 ./desktop/build
