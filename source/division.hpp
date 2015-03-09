@@ -3,6 +3,8 @@
 #include <list>
 #include <utility>
 
+#include <4u/la/vec.hpp>
+
 #include "unit.hpp"
 
 class Division
@@ -42,7 +44,16 @@ public:
 	};
 	
 private:
-	int width;
+	vec2 position = nullvec2;
+	vec2 direction = vec2(0,1);
+	
+	int width = 8;
+	double distance = 1.0;
+	
+	double speed = 1.0;
+	double angular_speed = 0.5;
+	vec2 destination = nullvec2;
+	
 	std::list<Member*> members;
 	
 public:
@@ -58,6 +69,26 @@ public:
 	const_iterator cbegin() const;
 	const_iterator cend() const;
 	
+	void updatePositions();
+	
+	void setPosition(const vec2 &p);
+	vec2 getPosition() const;
+	
+	void setDirection(const vec2 &p);
+	vec2 getDirection() const;
+	
 	void setWidth(int a);
 	int getWidth() const;
+	
+	void setDistance(double a);
+	double getDistance() const;
+	
+	void setSpeed(double s);
+	double getSpeed() const;
+	
+	void setAngularSpeed(double s);
+	double getAngularSpeed() const;
+	
+	void setDestination(vec2 d);
+	vec2 getDestination() const;
 };

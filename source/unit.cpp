@@ -29,3 +29,13 @@ void Unit::setDst(const vec2 &d)
 {
 	dst = d;
 }
+
+double Unit::getSpd() const
+{
+	return spd;
+}
+
+void Unit::setSpd(double s)
+{
+	spd = s;
+}

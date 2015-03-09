@@ -17,8 +17,11 @@ struct State
 	bool ready;
 	
 	Processor proc;
+	std::list<Object*> objects;
 	std::list<Unit*> units;
 	Division division;
+	
+	View view;
 };
 
 void handleAppEvent(Media_App *app, const Media_AppEvent *event)
@@ -73,7 +76,7 @@ void handleSurfaceEvent(Media_App *app, const Media_SurfaceEvent *event)
 
 void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
 {
-	// State *state = static_cast<State*>(app->data);
+	State *state = static_cast<State*>(app->data);
 	switch(event->action)
 	{
 	case MEDIA_ACTION_UP:
@@ -81,9 +84,20 @@ void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
 		break;
 	case MEDIA_ACTION_DOWN:
 		//printInfo("Down\n");
+		if(event->button == MEDIA_BUTTON_LEFT)
+		{
+			vec2 spos = 0.5*vec2(-state->width,state->height) + vec2(event->x,-event->y);
+			state->division.setDestination(state->view.posStoW(spos));
+		}
 		break;
 	case MEDIA_ACTION_MOVE:
 		//printInfo("Move\n");
+		break;
+	case MEDIA_ACTION_WHEEL_UP:
+		state->view.factor *= 1.2;
+		break;
+	case MEDIA_ACTION_WHEEL_DOWN:
+		state->view.factor *= 1.0/1.2;
 		break;
 	default:
 		break;
@@ -107,19 +121,34 @@ void render(Media_App *app)
 {
 	State *state = static_cast<State*>(app->data);
 	auto &units = state->units;
+	auto &objects = state->objects;
 	
 	clear();
+	
 	setColorInt(RED);
 	for(Unit *u : units)
 	{
-		drawUnit(u);
+		state->view.drawUnit(u);
+		state->view.drawUnitDst(u);
+	}
+	
+	setColorInt(YELLOW);
+	for(Object *o : objects)
+	{
+		state->view.drawObject(o);
 	}
 }
 
 int Media_main(Media_App *app)
 {
 	State state = {0,0,0,0,false};
-	state.division.setWidth(0x4);
+	state.division.setWidth(0x6);
+	state.division.setPosition(vec2(0,-2));
+	state.division.setDirection(vec2(0,1));
+	state.division.setDistance(0.8);
+	state.division.setDestination(state.division.getPosition());
+	state.division.setSpeed(0.5);
+	state.division.setAngularSpeed(0.2);
 	
 	for(int i = 0; i < 0x10; ++i)
 	{
@@ -127,12 +156,28 @@ int Media_main(Media_App *app)
 		u = new Unit();
 		u->setInvMass(1.0/80.0);
 		u->setSize(0.25);
-		u->setPos(vec2(8-i,-2));
+		u->setPos(vec2(8-i,-4));
+		u->setSpd(1.0);
 		state.units.push_back(u);
 		state.division.addUnit(u);
 		state.proc.addObject(u);
 		state.proc.addUnit(u);
 	}
+	
+	for(int i = 0; i < 0x10; ++i)
+	{
+		Object *o;
+		o = new Object();
+		o->setInvMass(0.0);
+		o->setSize(0.25);
+		o->setPos(vec2(i%8 - 3.5,i/8));
+		state.objects.push_back(o);
+		state.proc.addObject(o);
+	}
+	
+	state.proc.addDivision(&state.division);
+	
+	state.division.updatePositions();
 	
 	app->data = static_cast<void*>(&state);
 
@@ -158,9 +203,12 @@ int Media_main(Media_App *app)
 
 		if(state.ready)
 		{
-			state.proc.attract();
-			state.proc.move(0.032);
-			state.proc.interact();
+			for(int i = 0; i < 0x10; ++i)
+			{
+				state.proc.attract();
+				state.proc.move(0.0025);
+				state.proc.interact(0.1);
+			}
 		}
 
 		// printInfo("Frame\n");

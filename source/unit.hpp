@@ -9,6 +9,8 @@ class Unit : public Object
 private:
 	vec2 dir;
 	vec2 dst;
+	
+	double spd;
 	bool alive;
 
 public:
@@ -20,4 +22,7 @@ public:
 	
 	vec2 getDst() const;
 	void setDst(const vec2 &d);
+	
+	double getSpd() const;
+	void setSpd(double s);
 };
