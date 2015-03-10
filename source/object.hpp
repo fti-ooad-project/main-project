@@ -5,10 +5,10 @@
 class Object
 {
 private:
-	double inv_mass;
-	vec2 pos;
-	vec2 vel;
-	double size;
+	double inv_mass = 0.0;
+	vec2 pos = nullvec2;
+	vec2 vel = nullvec2;
+	double size = 1.0;
 	
 public:
 	Object();

@@ -1,8 +1,15 @@
 #include "division.hpp"
 
+#include <algorithm>
 #include <functional>
+#include <vector>
+#include <map>
+
+#include <cassert>
 
 #include <4u/la/mat.hpp>
+
+#include <media/media.h>
 
 Division::iterator::iterator(std::list<Member*>::iterator i) :
 	iter(i)
@@ -105,27 +112,139 @@ Division::const_iterator Division::cend() const
 	return const_iterator(members.cend());
 }
 
+vec2 Division::getRelPos(int row, int col) const
+{
+	int rows = (members.size() - 1)/width + 1;
+	int lcols = members.size()%width;
+	if(row < int(members.size())/width)
+	{
+		return distance*vec2(0.5*(rows - 1) - row, col - 0.5*(width - 1));
+	}
+	else
+	{
+		return distance*vec2(0.5*(rows - 1) - row, col - 0.5*(lcols - 1));
+	}
+}
+
 void Division::updatePositions()
 {
-	int cnt = 0;
 	mat2 rot = mat2(direction.x(),-direction.y(),direction.y(),direction.x());
-	int lln = (members.size()/width)*width;
-	int llw = members.size()%width;
-	vec2 beg = position - distance*rot*vec2(-0.5*(members.size()/width - 1),0.5*(width - 1));
-	vec2 llbeg = position - distance*rot*vec2(-0.5*(members.size()/width - 1),0.5*(llw - 1));
 	
 	for(Member *m : members)
 	{
-		if(cnt < lln)
+		m->unit->setDst(position + rot*getRelPos(m->row,m->col));
+	}
+}
+
+void Division::redistribute()
+{
+	int size = members.size();
+	Place *ps = new Place[size];
+	MemberDist *ms = new MemberDist[size];
+	
+	mat2 rot = mat2(direction.x(),-direction.y(),direction.y(),direction.x());
+	for(int i = 0; i < size; ++i)
+	{
+		ps[i].row = i/width;
+		ps[i].col = i%width;
+		ps[i].pos = position + rot*getRelPos(ps[i].row,ps[i].col);
+	}
+	
+	int cnt = 0;
+	for(Member *m : members)
+	{
+		ms[cnt].m = m;
+		double md = INFINITY;
+		for(int j = 0; j < size; ++j)
 		{
-			m->unit->setDst(beg + distance*rot*vec2(-cnt/width,cnt%width));
+			double d = sqr(ps[j].pos - m->unit->getPos());
+			if(d < md)
+			{
+				md = d;
+			}
 		}
-		else
-		{
-			m->unit->setDst(llbeg + distance*rot*vec2(-cnt/width,cnt%width));
-		}
+		ms[cnt].min_dist = sqrt(md);
 		++cnt;
 	}
+	
+	std::sort(ms,ms+size,[](MemberDist a, MemberDist b)->bool{return b.min_dist < a.min_dist;});
+	
+	for(int i = 0; i < size; ++i)
+	{
+		Place *p = nullptr;
+		double md = INFINITY;
+		for(int j = 0; j < size; ++j)
+		{
+			if(ps[j].m)
+			{
+				continue;
+			}
+			double d = sqr(ps[j].pos - ms[i].m->unit->getPos());
+			if(d < md)
+			{
+				p = &ps[j];
+				md = d;
+			}
+		}
+		if(p == nullptr)
+		{
+			break;
+		}
+		
+		p->m = &ms[i];
+		ms[i].dist = sqrt(md);
+	}
+	
+	for(int k = 0; k < 8; ++k)
+	{
+		Place *p = nullptr;
+		double mdd = 0.0;
+		for(int i = 0; i < size; ++i)
+		{
+			double dd = ps[i].m->dist - ps[i].m->min_dist;
+			if(dd > mdd)
+			{
+				mdd = dd;
+				p = &ps[i];
+			}
+		}
+		if(p == nullptr)
+		{
+			break;
+		}
+		
+		Place *pd = nullptr;
+		mdd = INFINITY;
+		for(int i = 0; i < size; ++i)
+		{
+			double dd = length(p->m->m->unit->getPos() - ps[i].pos) + length(ps[i].m->m->unit->getPos() - p->pos);
+			if(dd < mdd)
+			{
+				mdd = dd;
+				pd = &ps[i];
+			}
+		}
+		if(pd == nullptr)
+		{
+			break;
+		}
+		
+		MemberDist *m = p->m;
+		p->m = pd->m;
+		pd->m = m;
+		
+		p->m->dist = length(p->m->m->unit->getPos() - p->pos);
+		pd->m->dist = length(pd->m->m->unit->getPos() - pd->pos);
+	}
+	
+	for(int i = 0; i < size; ++i)
+	{
+		ps[i].m->m->col = ps[i].col;
+		ps[i].m->m->row = ps[i].row;
+	}
+	
+	delete ps;
+	delete ms;
 }
 
 void Division::setPosition(const vec2 &p)
@@ -176,16 +295,6 @@ void Division::setSpeed(double s)
 double Division::getSpeed() const
 {
 	return speed;
-}
-
-void Division::setAngularSpeed(double s)
-{
-	angular_speed = s;
-}
-
-double Division::getAngularSpeed() const
-{
-	return angular_speed;
 }
 
 void Division::setDestination(vec2 d)

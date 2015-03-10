@@ -83,15 +83,17 @@ void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
 		//printInfo("Up\n");
 		break;
 	case MEDIA_ACTION_DOWN:
-		//printInfo("Down\n");
+		printInfo("Down(index: %d, button: %d, pos: (%d,%d))\n",event->index,event->button,event->x,event->y);
 		if(event->button == MEDIA_BUTTON_LEFT)
 		{
-			vec2 spos = 0.5*vec2(-state->width,state->height) + vec2(event->x,-event->y);
+			vec2 spos = vec2(event->x,event->y);
 			state->division.setDestination(state->view.posStoW(spos));
+			state->division.setDirection(norm(state->division.getDestination() - state->division.getPosition()));
+			state->division.redistribute();
 		}
 		break;
 	case MEDIA_ACTION_MOVE:
-		//printInfo("Move\n");
+		// printInfo("Move(index: %d, pos: (%d,%d))\n",event->index,event->x,event->y);
 		break;
 	case MEDIA_ACTION_WHEEL_UP:
 		state->view.factor *= 1.2;
@@ -144,11 +146,10 @@ int Media_main(Media_App *app)
 	State state = {0,0,0,0,false};
 	state.division.setWidth(0x6);
 	state.division.setPosition(vec2(0,-2));
-	state.division.setDirection(vec2(0,1));
 	state.division.setDistance(0.8);
 	state.division.setDestination(state.division.getPosition());
+	state.division.setDirection(vec2(0,1));
 	state.division.setSpeed(0.5);
-	state.division.setAngularSpeed(0.2);
 	
 	for(int i = 0; i < 0x10; ++i)
 	{
@@ -168,8 +169,8 @@ int Media_main(Media_App *app)
 	{
 		Object *o;
 		o = new Object();
-		o->setInvMass(0.0);
-		o->setSize(0.25);
+		o->setInvMass(0.0005);
+		o->setSize(0.5);
 		o->setPos(vec2(i%8 - 3.5,i/8));
 		state.objects.push_back(o);
 		state.proc.addObject(o);
@@ -177,6 +178,7 @@ int Media_main(Media_App *app)
 	
 	state.proc.addDivision(&state.division);
 	
+	state.division.redistribute();
 	state.division.updatePositions();
 	
 	app->data = static_cast<void*>(&state);
@@ -187,7 +189,7 @@ int Media_main(Media_App *app)
 	app->listeners.sensor = &handleSensorEvent;
 
 	app->renderer = &render;
-
+	
 	for(;;)
 	{
 		if(state.wait)
@@ -209,6 +211,7 @@ int Media_main(Media_App *app)
 				state.proc.move(0.0025);
 				state.proc.interact(0.1);
 			}
+			state.division.updatePositions();
 		}
 
 		// printInfo("Frame\n");

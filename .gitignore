@@ -7,10 +7,18 @@
 
 !source.files
 
-android/bin
-android/obj
-android/gen
+android/
+desktop/
 
-desktop/obj
-desktop/dep
-desktop/app
+!android/jni/
+!android/res/
+!android/AndroidManifest.xml
+!android/build
+!android/run
+!android/update
+
+!desktop/source/
+!desktop/build
+!desktop/run
+!desktop/clean
+!desktop/makefile

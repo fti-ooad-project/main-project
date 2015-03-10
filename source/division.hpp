@@ -51,10 +51,25 @@ private:
 	double distance = 1.0;
 	
 	double speed = 1.0;
-	double angular_speed = 0.5;
 	vec2 destination = nullvec2;
 	
 	std::list<Member*> members;
+	
+	vec2 getRelPos(int row, int col) const;
+	
+	struct MemberDist
+	{
+		Member *m = nullptr;
+		double min_dist = 0.0;
+		double dist = 0.0;
+	};
+	
+	struct Place
+	{
+		int row, col;
+		vec2 pos;
+		MemberDist *m = nullptr;
+	};
 	
 public:
 	Division();
@@ -70,6 +85,7 @@ public:
 	const_iterator cend() const;
 	
 	void updatePositions();
+	void redistribute();
 	
 	void setPosition(const vec2 &p);
 	vec2 getPosition() const;
@@ -85,9 +101,6 @@ public:
 	
 	void setSpeed(double s);
 	double getSpeed() const;
-	
-	void setAngularSpeed(double s);
-	double getAngularSpeed() const;
 	
 	void setDestination(vec2 d);
 	vec2 getDestination() const;

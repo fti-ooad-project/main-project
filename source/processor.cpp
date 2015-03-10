@@ -89,19 +89,6 @@ void Processor::move(double dt)
 			vec2 pos = d->getPosition();
 			d->setPosition(pos + dt*norm(d->getDestination() - pos)*d->getSpeed());
 		}
-		
-		vec2 dir = norm(dist);
-		if(dir*d->getDirection() < 1.0 - RDELTA)
-		{
-			double da = d->getAngularSpeed()*dt;
-			if((dir^d->getDirection()) < 0.0)
-			{
-				da = -da;
-			}
-			vec2 ndir = norm((unimat2 + mat2(0,1,-1,0)*da)*d->getDirection());
-			d->setDirection(ndir);
-		}
-		d->updatePositions();
 	}
 }
 
