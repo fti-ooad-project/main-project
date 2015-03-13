@@ -9,6 +9,7 @@ static const double
 	RDELTA = 1e-4;
 
 Processor::Processor()
+  : tree(TreeKey(nullvec2,64.0),4)
 {
 	
 }
@@ -21,11 +22,13 @@ Processor::~Processor()
 void Processor::addObject(Object *o)
 {
 	objects.push_back(o);
+	tree.insert(TreeKey(o->getPos(),o->getSize()),o);
 }
 
 void Processor::removeObject(Object *o)
 {
 	objects.remove(o);
+	tree.remove(TreeKey(o->getPos(),o->getSize()),o);
 }
 
 void Processor::addUnit(Unit *u)
@@ -77,9 +80,16 @@ void Processor::attract()
 
 void Processor::move(double dt)
 {
+	// tree._print();
 	for(Object *o : objects)
 	{
-		o->setPos(o->getPos() + dt*o->getVel());
+		vec2 pos = o->getPos() + dt*o->getVel();
+		tree.replace(
+		      TreeKey(o->getPos(),o->getSize()),
+		      TreeKey(pos,o->getSize()),
+		      o
+		      );
+		o->setPos(pos);
 	}
 	for(Division *d : divisions)
 	{
@@ -87,32 +97,47 @@ void Processor::move(double dt)
 		if(dist*dist > DELTA2)
 		{
 			vec2 pos = d->getPosition();
-			d->setPosition(pos + dt*norm(d->getDestination() - pos)*d->getSpeed());
+			vec2 dp = dt*norm(d->getDestination() - pos)*d->getSpeed();
+			d->setPosition(pos + dp);
+			d->movePositions(dp);
 		}
 	}
 }
 
-void Processor::interact(double dev)
+void Processor::interact()
 {
-	for(int i = 0; i < 0x10; ++i)
+	for(int i = 0; i < 0x1; ++i)
 	{
-		for(auto i0 = objects.begin(); i0 != objects.end(); ++i0)
+		for(Object *o0 : objects)
 		{
-			for(auto i1 = objects.begin(); i1 != i0; ++i1)
+			tree.for_nearest(
+						TreeKey(o0->getPos(),o0->getSize()),
+						[this,o0](std::list<std::pair<TreeKey,Object*>> &list1)
 			{
-				Object *o0 = *i0;
-				Object *o1 = *i1;
-				vec2 dist = o0->getPos() - o1->getPos();
-				double mlen = o0->getSize() + o1->getSize();
-				if(dist*dist < mlen*mlen)
+				for(const std::pair<TreeKey,Object*> &p1 : list1)
 				{
-					double len = length(o0->getPos() - o1->getPos());
-					vec2 dir = dist/len;
-					double d0 = dev*o0->getInvMass(), d1 = dev*o1->getInvMass();
-					o0->setPos(o0->getPos() + dir*d0);
-					o1->setPos(o1->getPos() - dir*d1);
+					Object *o1 = p1.second;
+					
+					if(o0 >= o1)
+					{
+						continue;
+					}
+					
+					vec2 dist = o0->getPos() - o1->getPos();
+					double mlen = o0->getSize() + o1->getSize();
+					if(dist*dist < mlen*mlen)
+					{
+						double len = length(dist);
+						double dev = (mlen - len)/(o0->getInvMass() + o1->getInvMass());
+						vec2 dir = dist/len;
+						double d0 = dev*o0->getInvMass(), d1 = dev*o1->getInvMass();
+						o0->setPos(o0->getPos() + dir*d0);
+						o1->setPos(o1->getPos() - dir*d1);
+					}
+					
 				}
-			}
+			});
 		}
+		tree.update();
 	}
 }

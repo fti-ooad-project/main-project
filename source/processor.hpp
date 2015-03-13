@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include "tree.hpp"
 
 #include "object.hpp"
 #include "unit.hpp"
@@ -9,6 +10,7 @@
 class Processor
 {
 private:
+	Tree<Object*> tree;
 	std::list<Object*> objects;
 	std::list<Unit*> units;
 	std::list<Division*> divisions;
@@ -28,5 +30,5 @@ public:
 	
 	void attract();
 	void move(double dt);
-	void interact(double dev);
+	void interact();
 };

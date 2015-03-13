@@ -90,6 +90,7 @@ void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
 			state->division.setDestination(state->view.posStoW(spos));
 			state->division.setDirection(norm(state->division.getDestination() - state->division.getPosition()));
 			state->division.redistribute();
+			state->division.updatePositions();
 		}
 		break;
 	case MEDIA_ACTION_MOVE:
@@ -144,20 +145,22 @@ void render(Media_App *app)
 int Media_main(Media_App *app)
 {
 	State state = {0,0,0,0,false};
-	state.division.setWidth(0x6);
-	state.division.setPosition(vec2(0,-2));
+	state.division.setWidth(0x30);
+	state.division.setPosition(vec2(0,0));
 	state.division.setDistance(0.8);
 	state.division.setDestination(state.division.getPosition());
 	state.division.setDirection(vec2(0,1));
 	state.division.setSpeed(0.5);
 	
-	for(int i = 0; i < 0x10; ++i)
+	int units_num = 0x400;
+	int rows_num = sqrt(units_num);
+	for(int i = 0; i < units_num; ++i)
 	{
 		Unit *u;
 		u = new Unit();
 		u->setInvMass(1.0/80.0);
 		u->setSize(0.25);
-		u->setPos(vec2(8-i,-4));
+		u->setPos(vec2(rows_num/2 - i/rows_num,rows_num/2 - i%rows_num));
 		u->setSpd(1.0);
 		state.units.push_back(u);
 		state.division.addUnit(u);
@@ -165,16 +168,18 @@ int Media_main(Media_App *app)
 		state.proc.addUnit(u);
 	}
 	
+	/*
 	for(int i = 0; i < 0x10; ++i)
 	{
 		Object *o;
 		o = new Object();
 		o->setInvMass(0.0005);
-		o->setSize(0.5);
-		o->setPos(vec2(i%8 - 3.5,i/8));
+		o->setSize(2.0);
+		o->setPos(5.0*vec2(i%8 - 3.5,i/8));
 		state.objects.push_back(o);
 		state.proc.addObject(o);
 	}
+	*/
 	
 	state.proc.addDivision(&state.division);
 	
@@ -205,11 +210,12 @@ int Media_main(Media_App *app)
 
 		if(state.ready)
 		{
-			for(int i = 0; i < 0x10; ++i)
+			int iter = 0x1;
+			for(int i = 0; i < iter; ++i)
 			{
 				state.proc.attract();
-				state.proc.move(0.0025);
-				state.proc.interact(0.1);
+				state.proc.move(0.04/iter);
+				state.proc.interact();
 			}
 			state.division.updatePositions();
 		}

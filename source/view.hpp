@@ -13,7 +13,7 @@
 class View
 {
 public:
-	float factor = 40.0f;
+	float factor = 20.0f;
 	vec2 deviation = nullvec2;
 	
 	void drawUnit(const Unit *u)

@@ -136,6 +136,14 @@ void Division::updatePositions()
 	}
 }
 
+void Division::movePositions(const vec2 &dp)
+{
+	for(Member *m : members)
+	{
+		m->unit->setDst(m->unit->getDst() + dp);
+	}
+}
+
 void Division::redistribute()
 {
 	int size = members.size();
@@ -195,7 +203,8 @@ void Division::redistribute()
 		ms[i].dist = sqrt(md);
 	}
 	
-	for(int k = 0; k < 8; ++k)
+	int shakes = size;
+	for(int k = 0; k < shakes; ++k)
 	{
 		Place *p = nullptr;
 		double mdd = 0.0;

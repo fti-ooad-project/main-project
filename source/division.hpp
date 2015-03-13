@@ -85,6 +85,7 @@ public:
 	const_iterator cend() const;
 	
 	void updatePositions();
+	void movePositions(const vec2 &dp);
 	void redistribute();
 	
 	void setPosition(const vec2 &p);
