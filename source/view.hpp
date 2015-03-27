@@ -7,7 +7,7 @@
 
 #include <graphics/graphics.h>
 
-#include "unit.hpp"
+#include <engine-source/unit.hpp>
 
 
 class View
@@ -25,13 +25,13 @@ public:
 		float cosa = (dir.x() - dir.y())*M_SQRT1_2, sina = (dir.x() + dir.y())*M_SQRT1_2;
 		fmat2 ori = fmat2(cosa,sina,-sina,cosa);
 		
-		translate(pos.data);
-		transform((size*unifmat2).data);
-		drawCircle();
+		gTranslate(pos.data);
+		gTransform((size*unifmat2).data);
+		gDrawCircle();
 		
-		translate((pos + 0.5f*dir*size*float(M_SQRT2)).data);
-		transform(((0.5f*size)*ori).data);
-		drawQuad();
+		gTranslate((pos + 0.5f*dir*size*float(M_SQRT2)).data);
+		gTransform(((0.5f*size)*ori).data);
+		gDrawQuad();
 	}
 	
 	void drawUnitDst(const Unit *u)
@@ -40,9 +40,9 @@ public:
 		
 		fvec2 dst = posWtoS(u->getDst());
 		
-		translate(dst.data);
-		transform((0.6f*size*unifmat2).data);
-		drawRing(0.5);
+		gTranslate(dst.data);
+		gTransform((0.6f*size*unifmat2).data);
+		gDrawRing(0.5);
 	}
 	
 	void drawObject(const Object *o)
@@ -51,9 +51,9 @@ public:
 		
 		fvec2 pos = posWtoS(o->getPos());
 		
-		translate(pos.data);
-		transform((size*unifmat2).data);
-		drawCircle();
+		gTranslate(pos.data);
+		gTransform((size*unifmat2).data);
+		gDrawCircle();
 	}
 	
 	vec2 posStoW(vec2 s) const

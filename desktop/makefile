@@ -14,7 +14,7 @@ HEADERS = $(_HEADERS)
 SOURCES = $(_DESKTOP_SOURCES) $(_SOURCES)
 OBJ = $(SOURCES:%=$(OBJDIR)/%.o)
 DEP = $(SOURCES:%=$(DEPDIR)/%.d)
-BIN = app
+BIN = run
 
 all: $(DEP) $(BIN)
 
@@ -22,11 +22,11 @@ $(BIN): $(OBJ)
 	$(CXX) $(LINKFLAGS) $^ -o $@
 
 $(DEPDIR)/%.cpp.d: %.cpp $(HEADERS)
-	$(CXX) -MM $< -MT $(OBJDIR)/$<.o > $@
+	$(CXX) $(CXXFLAGS) -MM $< -MT $(OBJDIR)/$<.o > $@
 	echo '	$$(CXX) $$(CXXFLAGS) -c $$< -o $$@' >> $@
 	
 $(DEPDIR)/%.c.d: %.c $(HEADERS)
-	$(C) -MM $< -MT $(OBJDIR)/$<.o > $@
+	$(C) $(CFLAGS) -MM $< -MT $(OBJDIR)/$<.o > $@
 	echo '	$$(C) $$(CFLAGS) -c $$< -o $$@' >> $@
 
 -include $(DEP)

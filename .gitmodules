@@ -7,3 +7,18 @@
 [submodule "submodules/libmedia"]
 	path = submodules/libmedia
 	url = https://github.com/nthend/libmedia.git
+[submodule "submodules/engine"]
+	path = submodules/engine
+	url = https://github.com/fti-ooad-project/engine.git
+[submodule "submodules/libgui"]
+	path = submodules/libgui
+	url = https://github.com/nthend/libgui.git
+[submodule "libfont"]
+	path = libfont
+	url = https://github.com/nthend/libfont.git
+[submodule "submodules/libfont"]
+	path = submodules/libfont
+	url = https://github.com/nthend/libfont.git
+[submodule "submodules/libfreetype-android"]
+	path = submodules/libfreetype-android
+	url = https://github.com/nthend/libfreetype-android.git

@@ -3,9 +3,9 @@
 #include <media/media.h>
 #include <graphics/graphics.h>
 
-#include "unit.hpp"
-#include "division.hpp"
-#include "processor.hpp"
+#include <engine-source/unit.hpp>
+#include <engine-source/division.hpp>
+#include <engine-source/processor.hpp>
 #include "view.hpp"
 
 struct State
@@ -24,9 +24,9 @@ struct State
 	View view;
 };
 
-void handleAppEvent(Media_App *app, const Media_AppEvent *event)
+void handleAppEvent(const Media_AppEvent *event, void *data)
 {
-	State *state = static_cast<State*>(app->data);
+	State *state = static_cast<State*>(data);
 	switch(event->type)
 	{
 	case MEDIA_APP_SAVESTATE:
@@ -49,24 +49,24 @@ void handleAppEvent(Media_App *app, const Media_AppEvent *event)
 	}
 }
 
-void handleSurfaceEvent(Media_App *app, const Media_SurfaceEvent *event)
+void handleSurfaceEvent(const Media_SurfaceEvent *event, void *data)
 {
-	State *state = static_cast<State*>(app->data);
+	State *state = static_cast<State*>(data);
 	switch(event->type)
 	{
 	case MEDIA_SURFACE_INIT:
 		printInfo("Init surface\n");
-		initGraphics();
+		gInit();
 		break;
 	case MEDIA_SURFACE_TERM:
 		printInfo("Term surface\n");
-		disposeGraphics();
+		gDispose();
 		break;
 	case MEDIA_SURFACE_RESIZE:
 		printInfo("Resize surface ( %d, %d )\n",event->w,event->h);
 		state->width = event->w;
 		state->height = event->h;
-		resizeGraphics(event->w,event->h);
+		gResize(event->w,event->h);
 		state->ready = true;
 		break;
 	default:
@@ -74,9 +74,9 @@ void handleSurfaceEvent(Media_App *app, const Media_SurfaceEvent *event)
 	}
 }
 
-void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
+void handleMotionEvent(const Media_MotionEvent *event, void *data)
 {
-	State *state = static_cast<State*>(app->data);
+	State *state = static_cast<State*>(data);
 	switch(event->action)
 	{
 	case MEDIA_ACTION_UP:
@@ -96,11 +96,16 @@ void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
 	case MEDIA_ACTION_MOVE:
 		// printInfo("Move(index: %d, pos: (%d,%d))\n",event->index,event->x,event->y);
 		break;
-	case MEDIA_ACTION_WHEEL_UP:
-		state->view.factor *= 1.2;
-		break;
-	case MEDIA_ACTION_WHEEL_DOWN:
-		state->view.factor *= 1.0/1.2;
+	case MEDIA_ACTION_WHEEL:
+		if(event->yval > 0)
+		{
+			state->view.factor *= 1.2;
+		}
+		else
+		if(event->yval < 0)
+		{
+			state->view.factor /= 1.2;
+		}
 		break;
 	default:
 		break;
@@ -108,7 +113,7 @@ void handleMotionEvent(Media_App *app, const Media_MotionEvent *event)
 	//printInfo("Motion ( %d, %d )\n", static_cast<int>(pos.x()), static_cast<int>(pos.y()));
 }
 
-void handleSensorEvent(Media_App *app, const Media_SensorEvent *event)
+void handleSensorEvent(const Media_SensorEvent *event, void *data)
 {
 	switch(event->sensor)
 	{
@@ -126,16 +131,16 @@ void render(Media_App *app)
 	auto &units = state->units;
 	auto &objects = state->objects;
 	
-	clear();
+	gClear();
 	
-	setColorInt(RED);
+	gSetColorInt(G_RED);
 	for(Unit *u : units)
 	{
 		state->view.drawUnit(u);
 		state->view.drawUnitDst(u);
 	}
 	
-	setColorInt(YELLOW);
+	gSetColorInt(G_YELLOW);
 	for(Object *o : objects)
 	{
 		state->view.drawObject(o);
@@ -145,14 +150,14 @@ void render(Media_App *app)
 int Media_main(Media_App *app)
 {
 	State state = {0,0,0,0,false};
-	state.division.setWidth(0x30);
+	state.division.setWidth(0x14);
 	state.division.setPosition(vec2(0,0));
 	state.division.setDistance(0.8);
 	state.division.setDestination(state.division.getPosition());
 	state.division.setDirection(vec2(0,1));
 	state.division.setSpeed(0.5);
 	
-	int units_num = 0x400;
+	int units_num = 0x100;
 	int rows_num = sqrt(units_num);
 	for(int i = 0; i < units_num; ++i)
 	{
@@ -168,18 +173,16 @@ int Media_main(Media_App *app)
 		state.proc.addUnit(u);
 	}
 	
-	/*
-	for(int i = 0; i < 0x10; ++i)
+	for(int i = 0; i < 0xa; ++i)
 	{
 		Object *o;
 		o = new Object();
-		o->setInvMass(0.0005);
+		o->setInvMass(0.0001);
 		o->setSize(2.0);
-		o->setPos(5.0*vec2(i%8 - 3.5,i/8));
+		o->setPos(5.0*vec2(i%5 - 2,i/5));
 		state.objects.push_back(o);
 		state.proc.addObject(o);
 	}
-	*/
 	
 	state.proc.addDivision(&state.division);
 	
@@ -187,11 +190,14 @@ int Media_main(Media_App *app)
 	state.division.updatePositions();
 	
 	app->data = static_cast<void*>(&state);
-
-	app->listeners.app = &handleAppEvent;
-	app->listeners.surface = &handleSurfaceEvent;
-	app->listeners.motion = &handleMotionEvent;
-	app->listeners.sensor = &handleSensorEvent;
+	
+	Media_Listener listener;
+	listener.app = &handleAppEvent;
+	listener.surface = &handleSurfaceEvent;
+	listener.motion = &handleMotionEvent;
+	listener.sensor = &handleSensorEvent;
+	listener.data = static_cast<void*>(&state);
+	Media_addListener(app,&listener);
 
 	app->renderer = &render;
 	
