@@ -12,19 +12,12 @@
 
 #include <engine/session.hpp>
 
-#include "newview.hpp"
-
 struct Set
 {
-	// Old API
 	std::list<Object*> *objects;
 	std::list<Unit*> *units;
 	View *view;
 	Input *input;
-	
-	// New API
-	Session *session;
-	NewView *newview;
 };
 
 void render(Media_App *app)
@@ -48,30 +41,11 @@ void render(Media_App *app)
 		set->view->drawObject(o);
 	}
 	
-	set->newview->draw();
-	
 	set->input->drawUI();
 }
 
 int Media_main(Media_App *app)
 {
-	// New API
-	
-	Session session = Session(1);
-	PlayerHandle *handle = session.getPlayerHandle(0);
-	DivisionID division_id = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
-	session.loadMap();
-	handle->forDivisionHandleID(division_id,[](DivisionHandle *division)
-	{
-		division->setWidth(0x14);
-		division->setPosition(vec2(0,0));
-		division->setDistance(0.8);
-		division->setDestination(division->getPosition());
-		division->setDirection(vec2(0,1));
-	});
-	
-	// Old API
-	
 	Processor proc;
 	Storage storage;
 	
@@ -120,14 +94,11 @@ int Media_main(Media_App *app)
 	division.redistribute();
 	division.updatePositions();
 	
-	
 	View view;
 	
 	Input input(app,&view,&division);
 	
-	NewView newview = NewView(session.getSpectator(),&view);
-	
-	Set set = {&objects,&units,&view,&input,&session,&newview};
+	Set set = {&objects,&units,&view,&input};
 	app->data = static_cast<void*>(&set);
 
 	app->renderer = &render;
@@ -141,8 +112,7 @@ int Media_main(Media_App *app)
 			proc.move(0.04/iter);
 			proc.interact();
 		}
-		
-		session.process(0.04);
+		division.updatePositions();
 		
 		Media_renderFrame(app);
 	}

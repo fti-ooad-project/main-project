@@ -18,10 +18,25 @@ public:
 	
 	void drawUnit(const Unit *u)
 	{
-		float size = sizeWtoS(u->getSize());
+		drawUnitP(u->getPos(),u->getDir(),u->getSize());
+	}
+	
+	void drawUnitDst(const Unit *u)
+	{
+		drawUnitDstP(u->getDst(),u->getSize());
+	}
+	
+	void drawObject(const Object *o)
+	{
+		drawObjectP(o->getPos(),o->getSize());
+	}
+	
+	void drawUnitP(const vec2 &upos, const vec2 &udir, double usize)
+	{
+		float size = sizeWtoS(usize);
 		
-		fvec2 pos = posWtoS(u->getPos());
-		fvec2 dir = u->getDir();
+		fvec2 pos = posWtoS(upos);
+		fvec2 dir = udir;
 		float cosa = (dir.x() - dir.y())*M_SQRT1_2, sina = (dir.x() + dir.y())*M_SQRT1_2;
 		fmat2 ori = fmat2(cosa,sina,-sina,cosa);
 		
@@ -34,22 +49,22 @@ public:
 		gDrawQuad();
 	}
 	
-	void drawUnitDst(const Unit *u)
+	void drawUnitDstP(const vec2 &udst, double usize)
 	{
-		float size = sizeWtoS(u->getSize());
+		float size = sizeWtoS(usize);
 		
-		fvec2 dst = posWtoS(u->getDst());
+		fvec2 dst = posWtoS(udst);
 		
 		gTranslate(dst.data);
 		gTransform((0.6f*size*unifmat2).data);
 		gDrawRing(0.5);
 	}
 	
-	void drawObject(const Object *o)
+	void drawObjectP(const vec2 &upos, double usize)
 	{
-		float size = sizeWtoS(o->getSize());
+		float size = sizeWtoS(usize);
 		
-		fvec2 pos = posWtoS(o->getPos());
+		fvec2 pos = posWtoS(upos);
 		
 		gTranslate(pos.data);
 		gTransform((size*unifmat2).data);

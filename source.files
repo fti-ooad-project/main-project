@@ -17,7 +17,6 @@ source/engine-source/object.cpp
 source/engine-source/object.hpp
 source/engine-source/processor.cpp
 source/engine-source/processor.hpp
-source/engine-source/tree.hpp
 source/engine-source/unit.cpp
 source/engine-source/unit.hpp
 source/font/font.c
@@ -92,3 +91,5 @@ source/engine-source/interface/unitspectatorimpl.cpp
 source/engine-source/interface/divisionhandleimpl.cpp
 source/engine-source/interface/playerhandleimpl.cpp
 source/engine-source/interface/spectatorimpl.cpp
+source/newview.hpp
+submodules/engine/submodules/quadtree/tree.hpp

@@ -19,6 +19,5 @@ desktop/
 
 !desktop/source/
 !desktop/build
-!desktop/run
 !desktop/clean
 !desktop/makefile
