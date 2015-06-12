@@ -7,8 +7,8 @@
 
 #include <graphics/graphics.h>
 
-#include <engine-source/unit.hpp>
-
+#include <engine/spectator.hpp>
+#include <engine/divisionspectator.hpp>
 
 class View
 {
@@ -16,22 +16,22 @@ public:
 	float factor = 20.0f;
 	vec2 deviation = nullvec2;
 	
-	void drawUnit(const Unit *u)
+	Spectator *spec = nullptr;
+	DivisionID seldiv = 0;
+	
+public:
+	View(Spectator *s)
+	  : spec(s)
 	{
-		drawUnitP(u->getPos(),u->getDir(),u->getSize());
+		
 	}
 	
-	void drawUnitDst(const Unit *u)
+	~View()
 	{
-		drawUnitDstP(u->getDst(),u->getSize());
+		
 	}
 	
-	void drawObject(const Object *o)
-	{
-		drawObjectP(o->getPos(),o->getSize());
-	}
-	
-	void drawUnitP(const vec2 &upos, const vec2 &udir, double usize)
+	void drawUnit(const vec2 &upos, const vec2 &udir, double usize)
 	{
 		float size = sizeWtoS(usize);
 		
@@ -49,7 +49,7 @@ public:
 		gDrawQuad();
 	}
 	
-	void drawUnitDstP(const vec2 &udst, double usize)
+	void drawUnitDst(const vec2 &udst, double usize)
 	{
 		float size = sizeWtoS(usize);
 		
@@ -60,11 +60,11 @@ public:
 		gDrawRing(0.5);
 	}
 	
-	void drawObjectP(const vec2 &upos, double usize)
+	void drawObject(const vec2 &opos, double osize)
 	{
-		float size = sizeWtoS(usize);
+		float size = sizeWtoS(osize);
 		
-		fvec2 pos = posWtoS(upos);
+		fvec2 pos = posWtoS(opos);
 		
 		gTranslate(pos.data);
 		gTransform((size*unifmat2).data);
@@ -89,5 +89,43 @@ public:
 	double sizeWtoS(double w) const
 	{
 		return factor*w;
+	}
+	
+	void draw()
+	{
+		for(int iplayer = 0; iplayer < spec->getPlayersCount(); ++iplayer)
+		{
+			PlayerSpectator *player = spec->getPlayerSpectator(iplayer);
+			player->forEachDivisionSpectator([this](DivisionSpectator *division)
+			{
+				if(division->getID() != seldiv)
+				{
+					gSetColorInt(G_BLUE);
+				}
+				else
+				{
+					gSetColorInt(G_GREEN);
+				}
+				division->forEachUnitSpectator([this](UnitSpectator *unit)
+				{
+					drawUnit(unit->getPosition(),unit->getDirection(),unit->getSize());
+					drawUnitDst(unit->getDestination(),unit->getSize());
+				});
+			});
+		}
+		
+		gSetColorInt(G_CYAN);
+		spec->forEachObjectSpectator([this](ObjectSpectator *object)
+		{
+			if((object->getObjectType() & 0x0100) == 0)
+			{
+				drawObject(object->getPosition(),object->getSize());
+			}
+		});
+	}
+	
+	void setSelection(DivisionID id)
+	{
+		seldiv = id;
 	}
 };

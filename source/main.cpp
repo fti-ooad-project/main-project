@@ -3,157 +3,71 @@
 #include <media/media.h>
 #include <graphics/graphics.h>
 
-#include <engine-source/unit.hpp>
-#include <engine-source/division.hpp>
-#include <engine-source/processor.hpp>
-
 #include "input.hpp"
 #include "view.hpp"
 
 #include <engine/session.hpp>
 
-#include "newview.hpp"
-
 struct Set
 {
-	// Old API
-	std::list<Object*> *objects;
-	std::list<Unit*> *units;
-	View *view;
+	Session *session;
+	
 	Input *input;
 	
-	// New API
-	Session *session;
-	NewView *newview;
+	View *view;
 };
 
 void render(Media_App *app)
 {
 	Set *set = static_cast<Set*>(app->data);
-	auto &units = *set->units;
-	auto &objects = *set->objects;
 	
 	gClear();
 	
-	gSetColorInt(G_RED);
-	for(Unit *u : units)
-	{
-		set->view->drawUnit(u);
-		set->view->drawUnitDst(u);
-	}
-	
-	gSetColorInt(G_YELLOW);
-	for(Object *o : objects)
-	{
-		set->view->drawObject(o);
-	}
-	
-	set->newview->draw();
+	set->view->draw();
 	
 	set->input->drawUI();
 }
 
 int Media_main(Media_App *app)
 {
-	// New API
-	
 	Session session = Session(1);
 	PlayerHandle *handle = session.getPlayerHandle(0);
-	DivisionID division_id = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
-	session.loadMap();
-	handle->forDivisionHandleID(division_id,[](DivisionHandle *division)
+	DivisionID swordsmen = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
+	DivisionID archers = handle->purchaseDivision(UNIT_ARCHER,0x40);
+	
+	// session.loadMap();
+	
+	handle->forDivisionHandleID(swordsmen,[](DivisionHandle *division)
 	{
 		division->setWidth(0x14);
-		division->setPosition(vec2(0,0));
+		division->setPosition(vec2(0,-8));
 		division->setDistance(0.8);
 		division->setDestination(division->getPosition());
-		division->setDirection(vec2(0,1));
 	});
 	
-	// Old API
-	
-	Processor proc;
-	Storage storage;
-	
-	proc.setStorage(&storage);
-	
-	std::list<Object*> objects;
-	std::list<Unit*> units;
-	Division division;
-	
-	division.setWidth(0x14);
-	division.setPosition(vec2(0,0));
-	division.setDistance(0.8);
-	division.setDestination(division.getPosition());
-	division.setDirection(vec2(0,1));
-	division.setSpeed(0.5);
-	
-	int units_num = 0x100;
-	int rows_num = sqrt(units_num);
-	for(int i = 0; i < units_num; ++i)
+	handle->forDivisionHandleID(archers,[](DivisionHandle *division)
 	{
-		Unit *u;
-		u = new Unit();
-		u->setInvMass(1.0/80.0);
-		u->setSize(0.25);
-		u->setPos(vec2(rows_num/2 - i/rows_num,rows_num/2 - i%rows_num));
-		u->setSpd(1.0);
-		units.push_back(u);
-		division.addUnit(u);
-		storage.addObject(u);
-		storage.addUnit(u);
-	}
+		division->setWidth(0x8);
+		division->setPosition(vec2(0,8));
+		division->setDistance(1.2);
+		division->setDestination(division->getPosition());
+	});
 	
-	for(int i = 0; i < 0xa; ++i)
-	{
-		Object *o;
-		o = new Object();
-		o->setInvMass(0.0001);
-		o->setSize(2.0);
-		o->setPos(5.0*vec2(i%5 - 2,i/5));
-		objects.push_back(o);
-		storage.addObject(o);
-	}
+	View view = View(session.getSpectator());
 	
-	storage.addDivision(&division);
+	Input input = Input(app,&view,session.getPlayerHandle(0));
+	input.setDivisionID(swordsmen);
 	
-	division.redistribute();
-	division.updatePositions();
-	
-	
-	View view;
-	
-	Input input(app,&view,&division);
-	
-	NewView newview = NewView(session.getSpectator(),&view);
-	
-	Set set = {&objects,&units,&view,&input,&session,&newview};
+	Set set = {&session,&input,&view};
 	app->data = static_cast<void*>(&set);
 
 	app->renderer = &render;
 	
 	while(input.handle())
 	{
-		int iter = 0x1;
-		for(int i = 0; i < iter; ++i)
-		{
-			proc.attract();
-			proc.move(0.04/iter);
-			proc.interact();
-		}
-		
 		session.process(0.04);
 		
 		Media_renderFrame(app);
-	}
-	
-	for(Object *o : objects)
-	{
-		delete o;
-	}
-	for(Unit *u : units)
-	{
-		delete u;
 	}
 
 	return 0;

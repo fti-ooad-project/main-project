@@ -91,5 +91,4 @@ source/engine-source/interface/unitspectatorimpl.cpp
 source/engine-source/interface/divisionhandleimpl.cpp
 source/engine-source/interface/playerhandleimpl.cpp
 source/engine-source/interface/spectatorimpl.cpp
-source/newview.hpp
-submodules/engine/submodules/quadtree/tree.hpp
+source/engine-source/tree.hpp

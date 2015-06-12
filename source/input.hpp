@@ -1,12 +1,16 @@
 #pragma once
 
+#include <4u/la/vec.hpp>
+#include <4u/la/mat.hpp>
+
 #include <media/media.h>
 #include <graphics/graphics.h>
 #include <gui/factory.hpp>
 #include <gui/handler.hpp>
 
 #include "view.hpp"
-#include "engine-source/division.hpp"
+#include <engine/playerhandle.hpp>
+#include <engine/divisionhandle.hpp>
 
 class Input
 {
@@ -20,7 +24,8 @@ private:
 	
 	Media_App *app;
 	View *view;
-	Division *division;
+	PlayerHandle *player;
+	DivisionID division = 0;
 	
 	Media_Listener listener;
 	
@@ -92,13 +97,32 @@ private:
 				break;
 			case MEDIA_ACTION_DOWN:
 				printInfo("Down(index: %d, button: %d, pos: (%d,%d))\n",event->index,event->button,event->x,event->y);
+				if(event->button == MEDIA_BUTTON_RIGHT)
+				{
+					state->player->forDivisionHandleID(state->division,[&state,event](DivisionHandle *division)
+					{
+						vec2 spos = vec2(event->x,event->y);
+						division->setDestination(state->view->posStoW(spos));
+						division->setDirection(norm(division->getDestination() - division->getPosition()));
+					});
+				}
+				else
 				if(event->button == MEDIA_BUTTON_LEFT)
 				{
-					vec2 spos = vec2(event->x,event->y);
-					state->division->setDestination(state->view->posStoW(spos));
-					state->division->setDirection(norm(state->division->getDestination() - state->division->getPosition()));
-					state->division->redistribute();
-					state->division->updatePositions();
+					state->player->forEachDivisionHandle([&state,event](DivisionHandle *division)
+					{
+						vec2 wpos = state->view->posStoW(vec2(event->x,event->y));
+						vec2 dir = division->getDirection();
+						mat2 rot = {dir.y(),-dir.x(),dir.x(),dir.y()};
+						vec2 drp = rot*(wpos - division->getPosition())/division->getDistance();
+						drp.x() /= division->getWidth();
+						drp.y() /= (division->getUnitsCount()/division->getWidth() + 1);
+						if(fabs(drp.x()) < 0.5 && fabs(drp.y()) < 0.5)
+						{
+							state->division = division->getID();
+							state->view->setSelection(division->getID());
+						}
+					});
 				}
 				break;
 			case MEDIA_ACTION_MOVE:
@@ -123,8 +147,8 @@ private:
 	}
 	
 public:
-	Input(Media_App *a, View *v, Division *d)
-	  : app(a), view(v), division(d), factory(a)
+	Input(Media_App *a, View *v, PlayerHandle *s)
+	  : app(a), view(v), player(s), factory(a)
 	{
 		listener.app = &handleAppEvent;
 		listener.surface = &handleSurfaceEvent;
@@ -174,5 +198,10 @@ public:
 	void drawUI()
 	{
 		screen->draw();
+	}
+	
+	void setDivisionID(DivisionID id)
+	{
+		division = id;
 	}
 };
