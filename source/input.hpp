@@ -32,7 +32,7 @@ private:
 	gui::Factory factory;
 	gui::MediaHandler handler;
 	gui::Screen *screen = nullptr;
-	gui::ToggleButton *new_div = nullptr;
+	gui::Button *new_div = nullptr;
 	
 	static void handleAppEvent(const Media_AppEvent *event, void *data)
 	{
@@ -97,32 +97,34 @@ private:
 				break;
 			case MEDIA_ACTION_DOWN:
 				printInfo("Down(index: %d, button: %d, pos: (%d,%d))\n",event->index,event->button,event->x,event->y);
-				if(event->button == MEDIA_BUTTON_RIGHT)
+				if(state->player != nullptr)
 				{
-					state->player->forDivisionHandleID(state->division,[&state,event](DivisionHandle *division)
+					if(event->button == MEDIA_BUTTON_RIGHT || event->index == 1)
 					{
-						vec2 spos = vec2(event->x,event->y);
-						division->setDestination(state->view->posStoW(spos));
-						division->setDirection(norm(division->getDestination() - division->getPosition()));
-					});
-				}
-				else
-				if(event->button == MEDIA_BUTTON_LEFT)
-				{
-					state->player->forEachDivisionHandle([&state,event](DivisionHandle *division)
-					{
-						vec2 wpos = state->view->posStoW(vec2(event->x,event->y));
-						vec2 dir = division->getDirection();
-						mat2 rot = {dir.y(),-dir.x(),dir.x(),dir.y()};
-						vec2 drp = rot*(wpos - division->getPosition())/division->getDistance();
-						drp.x() /= division->getWidth();
-						drp.y() /= (division->getUnitsCount()/division->getWidth() + 1);
-						if(fabs(drp.x()) < 0.5 && fabs(drp.y()) < 0.5)
+						state->player->forDivisionHandleID(state->division,[&state,event](DivisionHandle *division)
 						{
-							state->division = division->getID();
-							state->view->setSelection(division->getID());
-						}
-					});
+							vec2 spos = vec2(event->x,event->y);
+							division->setDestination(state->view->posStoW(spos));
+							division->setDirection(norm(division->getDestination() - division->getPosition()));
+						});
+					}
+					else
+					if(event->button == MEDIA_BUTTON_LEFT && event->index == 0)
+					{
+						state->player->forEachDivisionHandle([&state,event](DivisionHandle *division)
+						{
+							vec2 wpos = state->view->posStoW(vec2(event->x,event->y));
+							vec2 dir = division->getDirection();
+							mat2 rot = {dir.y(),-dir.x(),dir.x(),dir.y()};
+							vec2 drp = rot*(wpos - division->getPosition())/division->getDistance();
+							drp.x() /= division->getWidth();
+							drp.y() /= (division->getUnitsCount()/division->getWidth() + 1);
+							if(fabs(drp.x()) < 0.5 && fabs(drp.y()) < 0.5)
+							{
+								state->setDivisionID(division->getID());
+							}
+						});
+					}
 				}
 				break;
 			case MEDIA_ACTION_MOVE:
@@ -184,14 +186,20 @@ public:
 		screen = factory.produceScreen();
 		handler.setScreen(screen);
 		
-		new_div = factory.produceToggleButton();
+		new_div = factory.produceButton();
 		new_div->setRelativeBounds(vec2(0.12,0.06));
 		new_div->setRelativePosition(vec2(0.86,0.92));
 		new_div->setText(L"+");
 		new_div->setColor(vec4(0,0,0.6,1));
-		new_div->setToggleColor(vec4(0,0.8,0,1));
 		new_div->setTextSize(32);
 		new_div->setTextColor(vec4(1,1,1,1));
+		new_div->setCallback([this](gui::Button *button)
+		{
+			if(player != nullptr)
+			{
+				player->purchaseDivision(UNIT_SWORDSMAN,0x40);
+			}
+		});
 		screen->addChild(new_div);
 	}
 	
@@ -203,5 +211,9 @@ public:
 	void setDivisionID(DivisionID id)
 	{
 		division = id;
+		if(view != nullptr)
+		{
+			view->setSelection(id);
+		}
 	}
 };

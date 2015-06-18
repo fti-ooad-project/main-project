@@ -1,3 +1,5 @@
+#define SERVER
+
 #include <list>
 
 #include <media/media.h>
@@ -6,7 +8,11 @@
 #include "input.hpp"
 #include "view.hpp"
 
-#include <engine/session.hpp>
+#ifdef SERVER
+#include <engine/localsession.hpp>
+#else
+#include <engine/remotesession.hpp>
+#endif
 
 struct Set
 {
@@ -30,7 +36,9 @@ void render(Media_App *app)
 
 int Media_main(Media_App *app)
 {
-	Session session = Session(1);
+	const int port = 18765;
+#ifdef SERVER
+	LocalSession session = LocalSession(1,port);
 	PlayerHandle *handle = session.getPlayerHandle(0);
 	DivisionID swordsmen = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
 	DivisionID archers = handle->purchaseDivision(UNIT_ARCHER,0x40);
@@ -52,11 +60,19 @@ int Media_main(Media_App *app)
 		division->setDistance(1.2);
 		division->setDestination(division->getPosition());
 	});
+#else
+	RemoteSession session("192.168.0.65",port);
+#endif
 	
 	View view = View(session.getSpectator());
 	
-	Input input = Input(app,&view,session.getPlayerHandle(0));
-	input.setDivisionID(swordsmen);
+	Input input = Input(app,&view,
+#ifdef SERVER
+	  session.getPlayerHandle(0)
+#else
+	  nullptr
+#endif
+	);
 	
 	Set set = {&session,&input,&view};
 	app->data = static_cast<void*>(&set);
@@ -65,8 +81,9 @@ int Media_main(Media_App *app)
 	
 	while(input.handle())
 	{
+#ifdef SERVER
 		session.process(0.04);
-		
+#endif
 		Media_renderFrame(app);
 	}
 

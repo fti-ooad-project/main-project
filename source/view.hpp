@@ -114,10 +114,10 @@ public:
 			});
 		}
 		
-		gSetColorInt(G_CYAN);
+		gSetColorInt(G_YELLOW);
 		spec->forEachObjectSpectator([this](ObjectSpectator *object)
 		{
-			if((object->getObjectType() & 0x0100) == 0)
+			//if((object->getObjectType() & 0x0100) == 0)
 			{
 				drawObject(object->getPosition(),object->getSize());
 			}
