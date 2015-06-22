@@ -1,29 +1,33 @@
 #pragma once
 
-#include <cmath>
-
-#include <4u/la/vec.hpp>
-#include <4u/la/mat.hpp>
-
-#include <graphics/graphics.h>
+#include <map>
 
 #include <engine/spectator.hpp>
 #include <engine/divisionspectator.hpp>
 
+#include "view_engine.hpp"
+
 class View
 {
 public:
-	float factor = 20.0f;
-	vec2 deviation = nullvec2;
-	
+	enum State
+	{
+		CLOSED = 0,
+		OPENED
+	};
+
+private:
 	Spectator *spec = nullptr;
 	DivisionID seldiv = 0;
+	
+	std::map<ObjectID,ViewObjectID> objs;
+	double scale = 4.0;
 	
 public:
 	View(Spectator *s)
 	  : spec(s)
 	{
-		
+		viewInit();
 	}
 	
 	~View()
@@ -31,64 +35,13 @@ public:
 		
 	}
 	
-	void drawUnit(const vec2 &upos, const vec2 &udir, double usize)
+	State getState() const
 	{
-		float size = sizeWtoS(usize);
-		
-		fvec2 pos = posWtoS(upos);
-		fvec2 dir = udir;
-		float cosa = (dir.x() - dir.y())*M_SQRT1_2, sina = (dir.x() + dir.y())*M_SQRT1_2;
-		fmat2 ori = fmat2(cosa,sina,-sina,cosa);
-		
-		gTranslate(pos.data);
-		gTransform((size*unifmat2).data);
-		gDrawCircle();
-		
-		gTranslate((pos + 0.5f*dir*size*float(M_SQRT2)).data);
-		gTransform(((0.5f*size)*ori).data);
-		gDrawQuad();
-	}
-	
-	void drawUnitDst(const vec2 &udst, double usize)
-	{
-		float size = sizeWtoS(usize);
-		
-		fvec2 dst = posWtoS(udst);
-		
-		gTranslate(dst.data);
-		gTransform((0.6f*size*unifmat2).data);
-		gDrawRing(0.5);
-	}
-	
-	void drawObject(const vec2 &opos, double osize)
-	{
-		float size = sizeWtoS(osize);
-		
-		fvec2 pos = posWtoS(opos);
-		
-		gTranslate(pos.data);
-		gTransform((size*unifmat2).data);
-		gDrawCircle();
-	}
-	
-	vec2 posStoW(vec2 s) const
-	{
-		return s/factor + deviation;
-	}
-	
-	vec2 posWtoS(vec2 w) const
-	{
-		return factor*(w - deviation);
-	}
-	
-	double sizeStoW(double s) const
-	{
-		return s/factor;
-	}
-	
-	double sizeWtoS(double w) const
-	{
-		return factor*w;
+		if(viewGetState())
+		{
+			return State::OPENED;
+		}
+		return State::CLOSED;
 	}
 	
 	void draw()
@@ -98,34 +51,76 @@ public:
 			PlayerSpectator *player = spec->getPlayerSpectator(iplayer);
 			player->forEachDivisionSpectator([this](DivisionSpectator *division)
 			{
-				if(division->getID() != seldiv)
+				int div = division->getID();
+				division->forEachUnitSpectator([this,div](UnitSpectator *unit)
 				{
-					gSetColorInt(G_BLUE);
-				}
-				else
-				{
-					gSetColorInt(G_GREEN);
-				}
-				division->forEachUnitSpectator([this](UnitSpectator *unit)
-				{
-					drawUnit(unit->getPosition(),unit->getDirection(),unit->getSize());
-					drawUnitDst(unit->getDestination(),unit->getSize());
+					ViewObjectID view_obj_id = findOrInsert(unit->getID(),0);
+					ViewObjectState state;
+					state.px = unit->getPosition().x()*scale;
+					state.py = unit->getPosition().y()*scale;
+					state.dx = unit->getDirection().x();
+					state.dy = unit->getDirection().y();
+					viewSetObjectState(view_obj_id,&state);
+					
+					float spd = length(unit->getVelocity());
+					const float wspd = 0.32, rspd = 0.81;
+					if(spd < 0.01)
+						viewSetObjectAnim(view_obj_id,2,0.2f); // idle
+					else if(spd < 1.2)
+						viewSetObjectAnim(view_obj_id,0,spd/wspd/scale); // walk
+					else
+						viewSetObjectAnim(view_obj_id,1,spd/rspd/scale); // run
+					
+					if(div != seldiv)
+						viewSelectObject(view_obj_id,0);
+					else
+						viewSelectObject(view_obj_id,2);
+					
 				});
 			});
 		}
 		
-		gSetColorInt(G_YELLOW);
+		// gSetColorInt(G_YELLOW);
 		spec->forEachObjectSpectator([this](ObjectSpectator *object)
 		{
-			//if((object->getObjectType() & 0x0100) == 0)
+			if((object->getObjectType() & 0x0100) == 0)
 			{
-				drawObject(object->getPosition(),object->getSize());
+				ViewObjectID view_obj_id = findOrInsert(object->getID(),2);
+				ViewObjectState state;
+				state.px = object->getPosition().x()*scale;
+				state.py = object->getPosition().y()*scale;
+				state.dx = 1.0f;
+				state.dy = 0.0f;
+				viewSetObjectState(view_obj_id,&state);
 			}
 		});
+	}
+	
+	ViewObjectID findOrInsert(ObjectID id, int type)
+	{
+		auto iter = objs.find(id);
+		int view_obj_id = 0;
+		if(iter == objs.end())
+		{
+			view_obj_id = viewAddObject(type);
+			objs.insert(std::pair<ObjectID,ViewObjectID>(id,view_obj_id));
+		}
+		else
+		{
+			view_obj_id = iter->second;
+		}
+		return view_obj_id;
 	}
 	
 	void setSelection(DivisionID id)
 	{
 		seldiv = id;
+	}
+	
+	vec3 StoW(vec2 p) const
+	{
+		fvec3 r;
+		viewGetMousePos(p.x(),p.y(),&r.x(),&r.y(),&r.z());
+		return r/scale;
 	}
 };

@@ -1,49 +1,20 @@
-#define SERVER
-
-#include <list>
-
-#include <media/media.h>
-#include <graphics/graphics.h>
-
-#include "input.hpp"
 #include "view.hpp"
+#include "input.hpp"
 
-#ifdef SERVER
+#include <SDL2/SDL.h>
+
 #include <engine/localsession.hpp>
-#else
-#include <engine/remotesession.hpp>
-#endif
 
-struct Set
-{
-	Session *session;
-	
-	Input *input;
-	
-	View *view;
-};
-
-void render(Media_App *app)
-{
-	Set *set = static_cast<Set*>(app->data);
-	
-	gClear();
-	
-	set->view->draw();
-	
-	set->input->drawUI();
-}
-
-int Media_main(Media_App *app)
+int main()
 {
 	const int port = 18765;
-#ifdef SERVER
+	
 	LocalSession session = LocalSession(1,port);
 	PlayerHandle *handle = session.getPlayerHandle(0);
 	DivisionID swordsmen = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
 	DivisionID archers = handle->purchaseDivision(UNIT_ARCHER,0x40);
 	
-	// session.loadMap();
+	session.loadMap();
 	
 	handle->forDivisionHandleID(swordsmen,[](DivisionHandle *division)
 	{
@@ -59,32 +30,20 @@ int Media_main(Media_App *app)
 		division->setPosition(vec2(0,8));
 		division->setDistance(1.2);
 		division->setDestination(division->getPosition());
+		division->setMode(MODE_FREE);
 	});
-#else
-	RemoteSession session("192.168.0.65",port);
-#endif
 	
 	View view = View(session.getSpectator());
 	
-	Input input = Input(app,&view,
-#ifdef SERVER
-	  session.getPlayerHandle(0)
-#else
-	  nullptr
-#endif
-	);
+	Input input = Input(&view,session.getPlayerHandle(0));
 	
-	Set set = {&session,&input,&view};
-	app->data = static_cast<void*>(&set);
-
-	app->renderer = &render;
-	
-	while(input.handle())
+	Uint32 tick = SDL_GetTicks();
+	while(view.getState() != View::CLOSED)
 	{
-#ifdef SERVER
-		session.process(0.04);
-#endif
-		Media_renderFrame(app);
+		Uint32 new_tick = SDL_GetTicks();
+		session.process(0.001*(new_tick - tick));
+		view.draw();
+		tick = new_tick;
 	}
 
 	return 0;
