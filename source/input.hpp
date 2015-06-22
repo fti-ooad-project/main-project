@@ -3,11 +3,6 @@
 #include <4u/la/vec.hpp>
 #include <4u/la/mat.hpp>
 
-#include <media/media.h>
-#include <graphics/graphics.h>
-#include <gui/factory.hpp>
-#include <gui/handler.hpp>
-
 #include "view.hpp"
 #include <engine/playerhandle.hpp>
 #include <engine/divisionhandle.hpp>
