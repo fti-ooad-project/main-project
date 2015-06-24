@@ -237,6 +237,7 @@ int viewGetObjectAnim(ViewObjectID id, float *speed)
 int viewSetMouseFunc(std::function<void(int index, float px, float py)> mf)
 {
 	mfunc = mf;
+	return 0;
 }
 
 int viewGetMousePos(float mx, float my, float *wx, float *wy, float *wz)

@@ -66,7 +66,7 @@ public:
 					const float wspd = 0.32, rspd = 0.81;
 					if(spd < 0.01)
 						viewSetObjectAnim(view_obj_id,2,0.2f); // idle
-					else if(spd < 1.2)
+					else if(spd < 1.6)
 						viewSetObjectAnim(view_obj_id,0,spd/wspd/scale); // walk
 					else
 						viewSetObjectAnim(view_obj_id,1,spd/rspd/scale); // run
@@ -80,7 +80,6 @@ public:
 			});
 		}
 		
-		// gSetColorInt(G_YELLOW);
 		spec->forEachObjectSpectator([this](ObjectSpectator *object)
 		{
 			if((object->getObjectType() & 0x0100) == 0)

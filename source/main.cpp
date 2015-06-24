@@ -3,12 +3,19 @@
 
 #include <SDL2/SDL.h>
 
+#define SERVER
+
+#ifdef SERVER
 #include <engine/localsession.hpp>
+#else
+#include <engine/remotesession.hpp>
+#endif
 
 int main()
 {
 	const int port = 18765;
-	
+
+#ifdef SERVER
 	LocalSession session = LocalSession(1,port);
 	PlayerHandle *handle = session.getPlayerHandle(0);
 	DivisionID swordsmen = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
@@ -32,10 +39,19 @@ int main()
 		division->setDestination(division->getPosition());
 		division->setMode(MODE_FREE);
 	});
+#else
+	RemoteSession session("192.168.0.65",port);
+#endif
 	
 	View view = View(session.getSpectator());
 	
-	Input input = Input(&view,session.getPlayerHandle(0));
+	Input input = Input(&view,
+#ifdef SERVER
+	  session.getPlayerHandle(0)
+#else
+	  nullptr
+#endif
+	);
 	
 	Uint32 tick = SDL_GetTicks();
 	while(view.getState() != View::CLOSED)
