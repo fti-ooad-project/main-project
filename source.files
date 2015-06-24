@@ -28,7 +28,6 @@ source/engine-source/4u/random/rand.hpp
 source/engine-source/4u/random/sphericrand.hpp
 source/engine-source/4u/util/const.hpp
 source/engine-source/4u/util/op.hpp
-source/engine-source/4u/util/string.hpp
 source/engine-source/interface/divisionhandleimpl.cpp
 source/engine-source/interface/divisionhandleimpl.hpp
 source/engine-source/interface/localsession.cpp
@@ -138,3 +137,11 @@ source/view-engine/linux/makefile
 build-info.mk
 source/view_engine.cpp
 source/view_engine.hpp
+source/engine-source/interface/playerhandleclient.hpp
+source/engine-source/interface/playerhandlebase.hpp
+source/engine-source/interface/playerhandlebase.cpp
+source/engine-source/interface/playerhandleclient.cpp
+source/engine-source/interface/divisionhandlebase.hpp
+source/engine-source/interface/divisionhandleclient.hpp
+source/engine-source/interface/divisionhandlebase.cpp
+source/engine-source/interface/divisionhandleclient.cpp

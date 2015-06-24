@@ -11,6 +11,8 @@
 #include <engine/remotesession.hpp>
 #endif
 
+#include <stdio.h>
+
 int main()
 {
 	const int port = 18765;
@@ -20,6 +22,8 @@ int main()
 	PlayerHandle *handle = session.getPlayerHandle(0);
 	DivisionID swordsmen = handle->purchaseDivision(UNIT_SWORDSMAN,0x100);
 	DivisionID archers = handle->purchaseDivision(UNIT_ARCHER,0x40);
+	
+	printf("%d %d\n",swordsmen,archers);
 	
 	session.loadMap();
 	
@@ -45,13 +49,7 @@ int main()
 	
 	View view = View(session.getSpectator());
 	
-	Input input = Input(&view,
-#ifdef SERVER
-	  session.getPlayerHandle(0)
-#else
-	  nullptr
-#endif
-	);
+	Input input = Input(&view,session.getPlayerHandle(0));
 	
 	Uint32 tick = SDL_GetTicks();
 	while(view.getState() != View::CLOSED)

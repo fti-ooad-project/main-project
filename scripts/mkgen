@@ -1,0 +1,3 @@
+#!/bin/sh
+> desktop/deprules.mk
+cat source.files | awk '/.c$/ || /.cpp$/ {print "dep/" $0 ".d: " $0 " $(HEADERS)"; print "	$(CXX) $(CXXFLAGS) -MM $< -MT $(OBJDIR)/$<.o > $@"; print "	echo \"	$$(CXX) $$(CXXFLAGS) -c $$< -o $$@\" >> $@"; print "";}' | sed -r "s/\"/'/g" >> desktop/deprules.mk

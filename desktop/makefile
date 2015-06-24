@@ -21,12 +21,6 @@ all: $(DEP) $(BIN)
 $(BIN): $(OBJ)
 	$(CXX) $(LINKFLAGS) $^ -o $@
 
-$(DEPDIR)/%.cpp.d: %.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -MM $< -MT $(OBJDIR)/$<.o > $@
-	echo '	$$(CXX) $$(CXXFLAGS) -c $$< -o $$@' >> $@
-	
-$(DEPDIR)/%.c.d: %.c $(HEADERS)
-	$(C) $(CFLAGS) -MM $< -MT $(OBJDIR)/$<.o > $@
-	echo '	$$(C) $$(CFLAGS) -c $$< -o $$@' >> $@
+include deprules.mk
 
 -include $(DEP)

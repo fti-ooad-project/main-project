@@ -18,7 +18,7 @@ public:
 
 private:
 	Spectator *spec = nullptr;
-	DivisionID seldiv = 0;
+	DivisionID seldiv = 1;
 	
 	std::map<ObjectID,ViewObjectID> objs;
 	double scale = 4.0;
